@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# connections.py
+# connection_manager.py
 # Copyright (C) ContinuumBridge Limited, 2014-2015 All Rights Reserved
 # Written by Peter Claydon
 #
@@ -13,20 +13,29 @@ import logging
 from twisted.internet import threads
 from twisted.internet import reactor, defer
 
-ModuleName =                "Connections"
+ModuleName =                "ConnectionManager"
 PING_TIMEOUT =              10
-CLIENT_INTERFACES =         "interfaces.client"
-SERVER_INTERFACES =         "interfaces.server"
-DNSMASQFILE =               "dnsmasq.conf"
-HOSTAPDFILE =               "hostapd"
-HOSTAPD_CONF_FILE =         "hostapd.conf"
-WPA_PROTO_FILE =            "wpa_supplicant.conf.proto"
+CLIENT_INTERFACES =         "../connection_manager/interfaces.client"
+SERVER_INTERFACES =         "../connection_manager/interfaces.server"
+DNSMASQFILE =               "../connection_manager/dnsmasq.conf"
+HOSTAPDFILE =               "../connection_manager/hostapd"
+HOSTAPD_CONF_FILE =         "../connection_manager/hostapd.conf"
+WPA_PROTO_FILE =            "../connection_manager/wpa_supplicant.conf.proto"
 GET_SSID_TIMEOUT =          180   # Time given for someone to input WiFi credentials in server mode
 
 class Connect():
-    def __init__(self, logfile, loglevel, monitorInterval=600):
+    def __init__(self, argv):
+        if len(argv) < 5:
+            logfile = "/var/log/connection_manger.log"
+            loglevel = logging.DEBUG
+            self.monitorInterval = 600
+            self.statusFile = ""
+        else:
+            logfile = argv[1]
+            loglevel = int(argv[2])
+            self.monitorInterval = float(argv[3])
+            self.statusFile = argv[4]
         logging.basicConfig(filename=logfile,level=loglevel,format='%(asctime)s %(levelname)s: %(message)s')
-        self.monitorInterval = monitorInterval
         self.missedPing = 0
         self.firstAfterReboot = True  # So that we only ask for WiFi credentials on reboot
         signal.signal(signal.SIGINT, self.signalHandler)  # For catching SIGINT
@@ -136,8 +145,8 @@ class Connect():
         return connection
     
     def getCredentials(self):
-        exe = "/home/bridge/bridge/connections/wificonfig.py "
-        htmlfile = "/home/bridge/bridge/connections/ssidform.html"
+        exe = "/home/bridge/bridge/connection_manager/wificonfig.py "
+        htmlfile = "/home/bridge/bridge/connection_manager/ssidform.html"
         cmd = exe + htmlfile
         logging.debug("%s getCredentials exe = %s, htmlfile = %s", ModuleName, exe, htmlfile)
         try:
@@ -145,6 +154,7 @@ class Connect():
         except Exception as ex:
             logging.warning("%s Cannot run wificonfig.py", ModuleName)
             logging.warning("%s Exception: %s %s", ModuleName, type(ex), str(ex.args))
+            return
         index = p.expect(['Credentials.*', pexpect.TIMEOUT, pexpect.EOF], timeout=GET_SSID_TIMEOUT)
         if index == 1:
             logging.warning("%s SSID and WPA key not supplied before timeout", ModuleName)
@@ -344,6 +354,9 @@ class Connect():
         connected = self.checkPing()
         logging.info("%s Monitor. connected: %s", ModuleName, connected)
         if not connected:
+            if self.statusFile != "":
+                if os.path.exists(self.statusFile):
+                    os.remove(self.statusFile)
             if self.missedPing > 0:
                 self.missedPing = 0
                 reactor.callLater(1, self.doConnect)
@@ -351,8 +364,11 @@ class Connect():
                 self.missedPing += 1
                 reactor.callLater(self.monitorInterval/2, self.monitor, connection)
         else:
+            if self.statusFile != "":
+                if not os.path.exists(self.statusFile):
+                    open(self.statusFile, 'w').close()
             self.missedPing = 0
             reactor.callLater(self.monitorInterval, self.monitor, connection)
 
 if __name__ == '__main__':
-    c = Connect("/var/log/connections.log", logging.DEBUG)
+    Connect(sys.argv)
