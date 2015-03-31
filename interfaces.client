@@ -1,0 +1,12 @@
+auto lo
+
+iface lo inet loopback
+iface eth0 inet dhcp
+
+allow-hotplug wlan0
+auto wlan0
+iface wlan0 inet dhcp
+wireless-essid myssid
+pre-up wpa_supplicant -B w -D wext -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf
+post-down killall -q wpa_supplicant
+iface default inet dhcp

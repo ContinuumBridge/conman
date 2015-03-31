@@ -1,0 +1,54 @@
+node_modules/
+aggregator/node-modules
+build
+manager/*.db
+manager/*.config
+manager/cb_version
+*.py[cod]
+thisbridge/*
+*.csv
+*.swp
+
+# C extensions
+*.so
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+#lib
+lib64
+
+# Installer logs
+pip-log.txt
+
+# Node log
+nodejs/log.js
+
+# Vim temporary files
+*.swp
+*.swo
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# Pycharm
+.idea/
