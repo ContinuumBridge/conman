@@ -8,6 +8,7 @@ manager/cb_version
 thisbridge/*
 *.csv
 *.swp
+*.log
 
 # C extensions
 *.so

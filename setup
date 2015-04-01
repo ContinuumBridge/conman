@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Must be run as root
+if [ "$(id -u)" != "0" ]; then
+    echo "This script should be run as 'root'. Type: sudo conman/setup"
+    exit 1
+fi
+
+# Python packages
+apt-get install -y python-dev
+apt-get install -y python-pip
+apt-get install -y python-software-properties
+apt-get install -y python-pexpect
+apt-get install -y python-twisted
+
+# WiFi
+apt-get install -y hostapd
+apt-get install -y hostap-utils
+apt-get install -y iw
+apt-get install -y dnsmasq
+
+# 3G modem software
+cd ~/src
+apt-get install -y sg3-utils
+wget "http://raspberry-at-home.com/files/sakis3g.tar.gz"
+tar xfz sakis3g.tar.gz
+cp sakis3g /usr/bin/sakis3g
+apt-get install -y ppp
+
+# Change max current on USB (for 3G modem)
+echo -e "# Change max USB current to support USB modems" >> /boot/config.txt
+echo -e "safe_mode_gpio=4" >> /boot/config.txt
+echo -e "max_usb_current=1" >> /boot/config.txt
