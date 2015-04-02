@@ -25,7 +25,7 @@ Then type:
     sudo conman/setup
     sudo reboot
 
-Conman will be started automatically. 
+Conman will be started automatically. That's all you need to do, so unless you want to turn conman off and on (which is likely to be during development), skip the rest of this section and go onto the Operation section.
 
 If you don't want conman to start automatically on boot, type:
 
@@ -35,17 +35,17 @@ To make conman start automatically again, type:
 
      sudo update-rc.d conman defaults
  
- If conman is not set to start automratically, you can start, stop and restart it using:
+If conman is not set to start automratically, you can start, stop and restart it using:
  
      sudo service conman start
      sudo service conman stop
      sudo service conman restart
  
- Non-automatic mode is principally of use during development or debug.
- 
- Operation
- ---------
- Conman works as follows. On boot:
+Non-automatic mode is principally of use during development or debug.
+
+Operation
+---------
+Conman works as follows. On boot:
  
  * It will connect using an Ethernet interface, if present.
  * If Ethernet is not present, it will try to connect using WiFi, if it has details for a local access point.
@@ -53,7 +53,7 @@ To make conman start automatically again, type:
  * If it can't connect on anything and there is a WiFi dongle, it will switch this into access point mode.
  * Bear in mind that there will be a delay of a minute or two before the Raspberry Pi goes into access point mode.
  
-When in access point mode, you can use a PC, tablet or phone to connect to the access point (it's called ContinuumBridge). When you have done this, open a browser and type: 10.0.0.1. You should see a page like this:
+When in access point mode, you can use a PC, tablet or phone to connect to the access point (it will be listed as ContinuumBridge). When you have done this, open a browser and type: 10.0.0.1. You should see a page like this:
 
 ![conman ssid page](https://github.com/ContinuumBridge/conman/blob/master/conman_ssid.jpg)
 
@@ -61,7 +61,7 @@ Enter the SSID and WPA key for your access point and then press Submit. You shou
 
 ![conman thanks page](https://github.com/ContinuumBridge/conman/blob/master/conman_thanks.jpg)
 
-Conman then uses the credentials you have just given it and reconfigure back into a client. It actually writes the credentials to the file /etc/wpa_supplicant/wpa_supplicant.conf. You can edit this file manually, for example if you know the credentials of a new access point while you are still connected to the Raspberry Pi, or you want to remove an access point. 
+Conman then uses the credentials you have just given it and reconfigure back into a client and connect to the access point. It actually writes the credentials to the file /etc/wpa_supplicant/wpa_supplicant.conf. You can edit this file manually, for example if you know the credentials of a new access point while you are still connected to the Raspberry Pi, or you want to remove an access point from its list. 
 
 Every 12 minutes, conman tries to ping a couple of servers. If it can't see either of them, it tries again after another six minutes and then repeats the process that it does on boot, with the exception that it only ever goes into server mode immediately after booting. One use of this feature is automatic fallback from Ethernet or WiFi to 3G/cellular. If this happens, the Raspberry Pi will remain connected to the cellular interface until something causes it to search again, such a a reboot, manual intervention or the cellular connection going down (which actually happens quite often in normal operation, possibly because many network operators drop a connection to a device that has been conencted for some time).
 
