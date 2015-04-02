@@ -65,7 +65,21 @@ Conman then uses the credentials you have just given it and reconfigure back int
 
 Every 12 minutes, conman tries to ping a couple of servers. If it can't see either of them, it tries again after another six minutes and then repeats the process that it does on boot, with the exception that it only ever goes into server mode immediately after booting. One use of this feature is automatic fallback from Ethernet or WiFi to 3G/cellular. If this happens, the Raspberry Pi will remain connected to the cellular interface until something causes it to search again, such a a reboot, manual intervention or the cellular connection going down (which actually happens quite often in normal operation, possibly because many network operators drop a connection to a device that has been conencted for some time).
 
+Code
+----
+Conman is written entirely in Python and the code is all contained in the files conman.py and wificonfig.py. If you look in conman.py, you'll see there is a lot of editing of template files, copying files around and starting and stopping of various services, especially to put the Raspberry Pi into access point mode. All this may look strange, but has been found to be robust over a long period of time and with dozens of Raspberry Pies running the software. 
+
+Some use of Python Twisted (https://twistedmatrix.com/trac/) is made, to allow event-driven programming in conman.py and to provide a very simple "web server" in wifconfig.py. If anyone wants to modify any of these parts of the code and isn't familiar with Twisted, we suggest you look here: http://continuumbridge.readme.io/v1.0/docs/developing-bridge-apps-1.
+
 Acknowledgement
 ---------------
 Conman has been made open source as a result of a competition run by the London Raspberry Pint Meetup Group (http://www.meetup.com/Raspberry-Pint-London/). 
 ![conman thanks page](https://github.com/ContinuumBridge/conman/blob/master/Raspberry_Pint.jpg)
+
+Numerous sources on the web were consulted during the development of conman (a process that started in late 2013). The ones that we used most are listed below. Our thanks to all the authors.
+
+* [hostapd: Ubuntu server as a wireless access point](http://www.danbishop.org/2011/12/11/using-hostapd-to-add-wireless-access-point-capabilities-to-an-ubuntu-server/)
+* A predecessor of: [The Pi-Point Raspberry Pi Wireless Access Point](http://www.pi-point.co.uk/), which I have just found when I came to write this.
+* [Raspberry Pi - Installing the Edimax EW-7811Un USB WiFi Adapter](http://www.savagehomeautomation.com/projects/raspberry-pi-installing-the-edimax-ew-7811un-usb-wifi-adapte.html#.UOdb5XYgik0)
+* [Huawei E3131 on Wheezy](http://www.raspberrypi.org/forums/viewtopic.php?t=18996)
+* [Testing & Setting the USB current limiter on the Raspberry Pi B+](https://projects.drogon.net/testing-setting-the-usb-current-limiter-on-the-raspberry-pi-b/)
