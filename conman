@@ -23,7 +23,7 @@ case "$1" in
         echo -n "Starting conman: "
         cd $DIR
         if [ -f $PROG ]; then
-            PROG >> '/var/log/conman-shell.log' 2>&1 &
+            $PROG >> '/var/log/conman.log' 2>&1 &
             conman_pid=$!
             echo $conman_pid > $PIDFILE
             echo 'done'

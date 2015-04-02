@@ -33,7 +33,6 @@ echo -e "safe_mode_gpio=4" >> /boot/config.txt
 echo -e "max_usb_current=1" >> /boot/config.txt
 
 # Copy everything to the right places
-rm -r /opt/conman
-cp -r ../conman /opt/conman
-cp conman /etc/init.d/conman
+cp -rf conman /opt/conman
+cp conman/conman /etc/init.d/conman
 update-rc.d conman defaults
