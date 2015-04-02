@@ -26,7 +26,7 @@ GET_SSID_TIMEOUT =          300   # Time given for someone to input WiFi credent
 class Connect():
     def __init__(self, argv):
         if len(argv) < 5:
-            logfile = "/var/log/connection_manger.log"
+            logfile = "/var/log/conman.log"
             loglevel = logging.DEBUG
             self.monitorInterval = 600
             self.statusFile = ""
