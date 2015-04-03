@@ -10,7 +10,7 @@ Depending on which interfaces are available, conman will try to connect on the f
 * WiFi (wlan0)
 * 3G USB dongle (eth1 or wwan0, depending on dongle type)
  
-If you want to use a 3G USB dongle, the steps for determining what type of dongle you have and configuring the network parameters is described here: http://continuumbridge.readme.io/v1.0/docs/hardware. There is a small difference: the sakis3g template file referred to can be found in this GitHub repository. 
+If you want to use a 3G USB dongle, the steps for determining what type of dongle you have and configuring the network parameters is described here: http://continuumbridge.readme.io/v1.0/docs/hardware. (There is a small difference: the sakis3g template file referred to is copied to /etc/sakis3g.conf as part of the setup process. All you need to do is edit it as described). 
 
 A very useful function of conman is that if it can't connect on any interface and it detects that the Raspberry Pi has a Wifi USB dongle, it will switch it into access point mode so that you can enter a WiFi access point SSID and APN key. This is described under the "operation" section, below.
 
@@ -25,7 +25,7 @@ Then type:
     sudo conman/setup
     sudo reboot
 
-Conman will be started automatically. That's all you need to do, so unless you want to turn conman off and on (which is likely to be during development), skip the rest of this section and go onto the Operation section.
+The setup process can take 10 to 15 minutes on a Raspberry Pi Model B or B+, depending on your Internet connection. After reboot, conman will be started automatically. That's all you need to do, so unless you want to turn conman off and on (which is likely to be during development), skip the rest of this section and go onto the Operation section.
 
 If you don't want conman to start automatically on boot, type:
 
@@ -70,6 +70,23 @@ Code
 Conman is written entirely in Python and the code is all contained in the files conman.py and wificonfig.py. If you look in conman.py, you'll see there is a lot of editing of template files, copying files around and starting and stopping of various services, especially to put the Raspberry Pi into access point mode. All this may look strange, but has been found to be robust over a long period of time and with dozens of Raspberry Pies running the software. 
 
 Some use of Python Twisted (https://twistedmatrix.com/trac/) is made, to allow event-driven programming in conman.py and to provide a very simple "web server" in wifconfig.py. If anyone wants to modify any of these parts of the code and isn't familiar with Twisted, we suggest you look here: http://continuumbridge.readme.io/v1.0/docs/developing-bridge-apps-1.
+
+It's easy to start conman from within another program. An example in Python is:
+
+    from subprocess import Popen
+    conmanProc = Popen([conman, LOGFILE, str(LOGGING_LEVEL), PING_INTERVAL, CONNECTION_STATUS])
+
+where:
+* conman is the path to the executable, conman.py.
+* LOGFILE is the file to write logging messages to (the default is /var/log/conman.log).
+* PING_INTERVAL is a string corresponding to the number of seconds between checks on the connection. Eg: "600".
+* CONNECTION_STATUS is the path to a file that shows whether there is an Internet conenction or not. The file is created if there is a connection and deleted if there isn't.
+
+Be careful not to start multiple copies of conman. If you're going to start it from within another program, thurn off automatic starting at reboot (see Installation section, above).
+
+Logging
+-------
+Conman writes information about what it's doing to the file: /var/log/conman.log. If you suspect that it's not working properly, have a look at this file to see if there are any helpful messages.
 
 Acknowledgement
 ---------------
