@@ -323,7 +323,10 @@ class Conman():
             connection, addr = self.checkIfconfig("wlan0")
             # Indicates wlan0 had the server ip address
             if addr == "10.0.0.1":
-                connection = ""
+                self.switchwlan0("client")
+                connection, addr = self.checkIfconfig("wlan0")
+            else:
+                connection, addr = self.checkIfconfig("wlan0")
         if addr == "" and "eth1" in interfaces:
             try:
                 s = check_output(["dhclient", "eth1"])
@@ -345,10 +348,14 @@ class Conman():
         logging.info("%s checkConnected. Connected by: %s", ModuleName, connection)
         if connection == "":
             interfaces = self.listInterfaces()
-            if "wlan0" in interfaces and self.firstAfterReboot:
-                logging.debug("%s checkConnected. Calling wifiConnect", ModuleName)
-                d1 = threads.deferToThread(self.wifiConnect)
-                d1.addCallback(self.monitor)
+            if "wlan0" in interfaces:
+                if self.firstAfterReboot:
+                    logging.debug("%s checkConnected. Calling wifiConnect", ModuleName)
+                    d1 = threads.deferToThread(self.wifiConnect)
+                    d1.addCallback(self.monitor)
+                else:
+                    self.switchwlan0("client")
+                    reactor.callLater(RECONNECT_INTERVAL, self.startDoConnect)
             else:
                 reactor.callLater(RECONNECT_INTERVAL, self.startDoConnect)
         else:
@@ -372,9 +379,11 @@ class Conman():
         logging.debug("%s checkMonitor. connected: %s", ModuleName, connected)
         if not connected:
             if self.missedPing > 0:
+                logging.debug("%s checkMonitor. Calling doConnect", ModuleName)
                 self.missedPing = 0
                 reactor.callInThread(self.doConnect)
             else:
+                logging.debug("%s checkMonitor. Missed ping", ModuleName)
                 self.missedPing += 1
                 reactor.callLater(self.monitorInterval/2, self.monitor, "")
         else:
