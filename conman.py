@@ -22,26 +22,23 @@ HOSTAPDFILE =               "../conman/hostapd"
 HOSTAPD_CONF_FILE =         "../conman/hostapd.conf"
 WPA_PROTO_FILE =            "../conman/wpa_supplicant.conf.proto"
 GET_SSID_TIMEOUT =          300   # Time given for someone to input WiFi credentials in server mode
+RECONNECT_INTERVAL =        120   # Time to wait before trying to connect again
 
-class Connect():
-    def __init__(self, argv):
-        if len(argv) < 5:
-            logfile = "/var/log/conman.log"
-            loglevel = logging.DEBUG
-            self.monitorInterval = 600
-            self.statusFile = ""
-        else:
-            logfile = argv[1]
-            loglevel = int(argv[2])
-            self.monitorInterval = float(argv[3])
-            self.statusFile = argv[4]
-        logging.basicConfig(filename=logfile,level=loglevel,format='%(asctime)s %(levelname)s: %(message)s')
+class Conman():
+    def __init__(self):
         self.missedPing = 0
+        self.connecting = True
+        self.monitorByPing = True  # If false, call setConnected() to set whether connected or not
         self.firstAfterReboot = True  # So that we only ask for WiFi credentials on reboot
         signal.signal(signal.SIGINT, self.signalHandler)  # For catching SIGINT
         signal.signal(signal.SIGTERM, self.signalHandler)  # For catching SIGTERM
-        reactor.callLater(0.1, self.doConnect)
-        reactor.run()
+
+    def start(self, logFile="/var/log/conman.log", logLevel=logging.INFO, monitorInterval=600):
+        logging.basicConfig(filename=logFile,level=logLevel,format='%(asctime)s %(levelname)s: %(message)s')
+        self.monitorInterval = monitorInterval
+        reactor.callInThread(self.doConnect)
+        if not reactor.running:
+            reactor.run()
 
     def signalHandler(self, signal, frame):
         logging.debug("%s signalHandler received signal", ModuleName)
@@ -101,7 +98,7 @@ class Connect():
         # If we don't return before getting here, we've failed
         return False
      
-    def startSakis(self):
+    def startSakisThread(self):
         # Called in a thread
         logging.debug("%s startSakis", ModuleName)
         addr = ""
@@ -131,8 +128,8 @@ class Connect():
         for attempt in range (5):
             try:
                 # sakis3g requires --sudo despite being run by root. Config from /etc/sakis3g.conf
-                s = check_output(["/usr/bin/sakis3g", "--sudo", "reconnect", "--debug"])
-                #s = check_output(["/usr/bin/sakis3g", "--sudo", "reconnect"])
+                #s = check_output(["/usr/bin/sakis3g", "--sudo", "reconnect", "--debug"])
+                s = check_output(["/usr/bin/sakis3g", "--sudo", "reconnect"])
                 logging.debug("%s startSakis, attempt %s. s: %s", ModuleName, str(attempt), s)
                 if "connected" in s.lower() or "reconnected" in s.lower():
                     logging.info("%s startSakis succeeded", ModuleName)
@@ -142,8 +139,11 @@ class Connect():
                 logging.warning("%s Exception: %s %s", ModuleName, type(ex), str(ex.args))
                 time.sleep(attempt*60)
         connection, addr = self.checkIfconfig("wwan0")
-        return connection
+        reactor.callFromThread(self.checkConnected, connection)
     
+    def startSakis(self):
+        reactor.callInThread(self.startSakisThread)
+
     def getCredentials(self):
         exe = "../conman/wificonfig.py "
         htmlfile = "../conman/ssidform.html"
@@ -313,6 +313,7 @@ class Connect():
         return "wlan0"
     
     def doConnect(self):
+        self.connecting = True
         interfaces = self.listInterfaces()
         logging.info("%s Available interfaces: %s", ModuleName, interfaces)
         addr = ""
@@ -333,11 +334,13 @@ class Connect():
         logging.debug("%s doConnect, addr: %s, interfaces: %s", ModuleName, addr, interfaces)
         if addr == "" and "wwan0" in interfaces:
             logging.debug("%s doConnect, calling startSakis", ModuleName)
-            d1 = threads.deferToThread(self.startSakis)
-            d1.addCallback(self.checkConnected)
+            reactor.callFromThread(self.startSakis)
         else:
-            self.checkConnected(connection)
+            reactor.callFromThread(self.checkConnected, connection)
     
+    def startDoConnect(self):
+        reactor.callInThread(self.doConnect)
+
     def checkConnected(self, connection):
         logging.info("%s checkConnected. Connected by: %s", ModuleName, connection)
         if connection == "":
@@ -346,29 +349,38 @@ class Connect():
                 logging.debug("%s checkConnected. Calling wifiConnect", ModuleName)
                 d1 = threads.deferToThread(self.wifiConnect)
                 d1.addCallback(self.monitor)
+            else:
+                reactor.callLater(RECONNECT_INTERVAL, self.startDoConnect)
         else:
+            self.connecting = False
             self.monitor(connection)
     
+    def setConnected(self, connected):
+        if not connected and not self.connecting:
+            reactor.callInThread(self.doConnect)
+
+    def isConnected(self):
+        return not self.connecting
+
     def monitor(self, connection):
         self.firstAfterReboot = False
-        connected = self.checkPing()
-        logging.info("%s Monitor. connected: %s", ModuleName, connected)
+        if self.monitorByPing:
+            d = threads.deferToThread(self.checkPing)
+            d.addCallback(self.checkMonitor)
+
+    def checkMonitor(self, connected):
+        logging.debug("%s checkMonitor. connected: %s", ModuleName, connected)
         if not connected:
-            if self.statusFile != "":
-                if os.path.exists(self.statusFile):
-                    os.remove(self.statusFile)
             if self.missedPing > 0:
                 self.missedPing = 0
-                reactor.callLater(1, self.doConnect)
+                reactor.callInThread(self.doConnect)
             else:
                 self.missedPing += 1
-                reactor.callLater(self.monitorInterval/2, self.monitor, connection)
+                reactor.callLater(self.monitorInterval/2, self.monitor, "")
         else:
-            if self.statusFile != "":
-                if not os.path.exists(self.statusFile):
-                    open(self.statusFile, 'w').close()
             self.missedPing = 0
-            reactor.callLater(self.monitorInterval, self.monitor, connection)
+            reactor.callLater(self.monitorInterval, self.monitor, "")
 
 if __name__ == '__main__':
-    Connect(sys.argv)
+    c = Conman()
+    c.start(logFile="/var/log/conman.log", logLevel=logging.DEBUG, monitorInterval=600)
