@@ -43,7 +43,7 @@ class Conman():
     def signalHandler(self, signal, frame):
         logging.debug("%s signalHandler received signal", ModuleName)
         reactor.stop()
-        exit()
+        sys.exit()
 
     def listInterfaces(self):
         interfaces = []
