@@ -35,6 +35,8 @@ class Conman():
 
     def start(self, logFile="/var/log/conman.log", logLevel=logging.INFO, monitorInterval=600):
         logging.basicConfig(filename=logFile,level=logLevel,format='%(asctime)s %(levelname)s: %(message)s')
+        logging.info("%s started by call to start", ModuleName)
+        self.monitorByPing = False
         self.monitorInterval = monitorInterval
         reactor.callInThread(self.doConnect)
         if not reactor.running:
