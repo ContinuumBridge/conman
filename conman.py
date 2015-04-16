@@ -30,8 +30,6 @@ class Conman():
         self.connecting = True
         self.monitorByPing = True  # If false, call setConnected() to set whether connected or not
         self.firstAfterReboot = True  # So that we only ask for WiFi credentials on reboot
-        signal.signal(signal.SIGINT, self.signalHandler)  # For catching SIGINT
-        signal.signal(signal.SIGTERM, self.signalHandler)  # For catching SIGTERM
 
     def start(self, logFile="/var/log/conman.log", logLevel=logging.INFO, monitorInterval=600):
         logging.basicConfig(filename=logFile,level=logLevel,format='%(asctime)s %(levelname)s: %(message)s')
@@ -39,7 +37,10 @@ class Conman():
         self.monitorByPing = False
         self.monitorInterval = monitorInterval
         reactor.callInThread(self.doConnect)
+        # If reactor is running, we're part of another program
         if not reactor.running:
+            signal.signal(signal.SIGINT, self.signalHandler)  # For catching SIGINT
+            signal.signal(signal.SIGTERM, self.signalHandler)  # For catching SIGTERM
             reactor.run()
 
     def signalHandler(self, signal, frame):
