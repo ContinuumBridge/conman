@@ -140,7 +140,7 @@ class Conman():
                 logging.warning("%s startSakis sakis3g failed, attempt %s", ModuleName, str(attempt))
                 logging.warning("%s Exception: %s %s", ModuleName, type(ex), str(ex.args))
                 time.sleep(attempt*60)
-        connection, addr = self.checkIfconfig("wwan0")
+        connection, addr = self.checkIfconfig("ppp0")
         reactor.callFromThread(self.checkConnected, connection)
     
     def startSakis(self):
@@ -338,8 +338,10 @@ class Conman():
             connection, addr = self.checkIfconfig("eth1")
         logging.debug("%s doConnect, addr: %s, interfaces: %s", ModuleName, addr, interfaces)
         if addr == "" and "wwan0" in interfaces:
-            logging.debug("%s doConnect, calling startSakis", ModuleName)
-            reactor.callFromThread(self.startSakis)
+            connection, addr = self.checkIfconfig("ppp0")
+            if addr == "":
+                logging.debug("%s doConnect, calling startSakis", ModuleName)
+                reactor.callFromThread(self.startSakis)
         else:
             reactor.callFromThread(self.checkConnected, connection)
     
