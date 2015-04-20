@@ -368,9 +368,6 @@ class Conman():
         if not connected and not self.connecting:
             reactor.callInThread(self.doConnect)
 
-    def isConnected(self):
-        return not self.connecting
-
     def monitor(self, connection):
         self.firstAfterReboot = False
         if self.monitorByPing:
