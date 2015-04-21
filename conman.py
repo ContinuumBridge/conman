@@ -70,9 +70,11 @@ class Conman():
         addr = ""
         try:
             ifconfig = check_output(["ifconfig", interface]).split()
-            if ifconfig[5] == "inet":
-                addr = ifconfig[6][5:]
-                connection = interface
+            for i in range(1, len(ifconfig)):
+                if ifconfig[i] == "inet":
+                    addr = ifconfig[i+1][5:]
+                    connection = interface
+                    break
         except Exception as ex:
             logging.warning("%s Problem in checkIfconfig %s", ModuleName, interface)
             logging.warning("%s Exception: %s %s", ModuleName, type(ex), str(ex.args))
