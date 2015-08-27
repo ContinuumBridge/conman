@@ -28,14 +28,17 @@ class Conman():
     def __init__(self):
         self.missedPing = 0
         self.connecting = True
+        self.connection = "none"
+        self.cellularPriority = False
         self.monitorByPing = True  # If false, call setConnected() to set whether connected or not
         self.firstAfterReboot = True  # So that we only ask for WiFi credentials on reboot
 
-    def start(self, logFile="/var/log/conman.log", logLevel=logging.INFO, monitorInterval=600):
+    def start(self, logFile="/var/log/conman.log", logLevel=logging.INFO, monitorInterval=600, cellularPriority=False):
         logging.basicConfig(filename=logFile,level=logLevel,format='%(asctime)s %(levelname)s: %(message)s')
         logging.info("%s started by call to start", ModuleName)
         self.monitorByPing = False
         self.monitorInterval = monitorInterval
+        self.cellularPriority = cellularPriority
         reactor.callInThread(self.doConnect)
         # If reactor is running, we're part of another program
         if not reactor.running:
@@ -316,11 +319,7 @@ class Conman():
         time.sleep(10)
         return "wlan0"
     
-    def doConnect(self):
-        self.connecting = True
-        interfaces = self.listInterfaces()
-        logging.info("%s Available interfaces: %s", ModuleName, interfaces)
-        addr = ""
+    def connectLocal(self, interfaces):
         if "eth0" in interfaces:
             connection, addr = self.checkIfconfig("eth0")
         if addr == "" and "wlan0" in interfaces:
@@ -331,6 +330,15 @@ class Conman():
                 connection, addr = self.checkIfconfig("wlan0")
             else:
                 connection, addr = self.checkIfconfig("wlan0")
+        return connection, addr
+
+    def doConnect(self):
+        self.connecting = True
+        interfaces = self.listInterfaces()
+        logging.info("%s Available interfaces: %s", ModuleName, interfaces)
+        addr = ""
+        if not self.cellularPriority:
+            connection, addr = self.connectLocal(interfaces)
         if addr == "" and "eth1" in interfaces:
             try:
                 s = check_output(["dhclient", "eth1"])
@@ -344,8 +352,12 @@ class Conman():
             if addr == "":
                 logging.debug("%s doConnect, calling startSakis", ModuleName)
                 reactor.callFromThread(self.startSakis)
+        if addr == "" and self.cellularPriority:
+            connection, addr = self.connectLocal(interfaces)
         else:
             reactor.callFromThread(self.checkConnected, connection)
+        self.connection = connection
+        logging.debug("%s doConnect. connection: %s", ModuleName, self.connection)
     
     def startDoConnect(self):
         reactor.callInThread(self.doConnect)
@@ -392,6 +404,9 @@ class Conman():
         else:
             self.missedPing = 0
             reactor.callLater(self.monitorInterval, self.monitor, "")
+
+    def connectedBy(self):
+        return self.connection
 
 if __name__ == '__main__':
     c = Conman()
