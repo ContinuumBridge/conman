@@ -124,7 +124,7 @@ class Conman():
             replaced = False
             for line in i:
                 logging.debug("%s startSakis. line in:  %s", ModuleName, line)
-                if "USBMODEM" in line:
+                if "USBMODEM=" in line or "USBMODEM =" in line:
                     line = "USBMODEM=\"12d1:" + usbAddr + "\"\n"
                     logging.debug("%s startSakis. Modem: %s", ModuleName, line)
                 o.write(line)
