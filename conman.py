@@ -147,9 +147,12 @@ class Conman():
                 time.sleep(attempt*60)
         connection, addr = self.checkIfconfig("ppp0")
         reactor.callFromThread(self.checkConnected, connection)
-    
+
     def startSakis(self):
-        reactor.callInThread(self.startSakisThread)
+        if os.path.isfile(sakis3gConf):
+            reactor.callInThread(self.startSakisThread)
+        else:
+            logging.error("%s Trying to use sakis3g, but config file does not exist", ModuleName)
 
     def getCredentials(self):
         exe = "../conman/wificonfig.py "
