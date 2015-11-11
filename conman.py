@@ -23,6 +23,7 @@ HOSTAPD_CONF_FILE =         "../conman/hostapd.conf"
 WPA_PROTO_FILE =            "../conman/wpa_supplicant.conf.proto"
 GET_SSID_TIMEOUT =          300   # Time given for someone to input WiFi credentials in server mode
 RECONNECT_INTERVAL =        120   # Time to wait before trying to connect again
+SAKIS3GCONF =               "/etc/sakis3g.conf"
 
 class Conman():
     def __init__(self):
@@ -117,8 +118,7 @@ class Conman():
                 usbAddr = l[5:]
                 break
         if usbAddr != "":
-            sakis3gConf = "/etc/sakis3g.conf"
-            i = open(sakis3gConf, 'r')
+            i = open(SAKIS3GCONF, 'r')
             o = open("sakis3g.tmp", 'w') 
             found = False
             replaced = False
@@ -130,7 +130,7 @@ class Conman():
                 o.write(line)
             i.close()
             o.close()
-            call(["mv", "sakis3g.tmp", sakis3gConf])
+            call(["mv", "sakis3g.tmp", SAKIS3GCONF])
         # Try to connect 6 times, each time increasing the waiting time
         for attempt in range (5):
             try:
@@ -149,7 +149,7 @@ class Conman():
         reactor.callFromThread(self.checkConnected, connection)
 
     def startSakis(self):
-        if os.path.isfile(sakis3gConf):
+        if os.path.isfile(SAKIS3GCONF):
             reactor.callInThread(self.startSakisThread)
         else:
             logging.error("%s Trying to use sakis3g, but config file does not exist", ModuleName)
