@@ -53,11 +53,17 @@ class Conman():
 
     def listInterfaces(self):
         interfaces = []
+        # If USB modem has not yet been initialised, check_output will fail, so try again after a delay
+        attempt = 0
+        while not os.path.exists("/dev/sr0") and (attempt < 3):
+            logging.info("%s Checking for /dev/sr0, attempt: %s", ModuleName, attempt)
+            time.sleep(3)
+            attempt += 1
         try:
             s = check_output(["sudo", "/usr/bin/sg_raw", "/dev/sr0", "11", "06", "20", "00", "00", "00", "00", "00", "01", "00"])
-            logging.debug("%s startModem, sg_raw output: %s", ModuleName, s)
+            logging.info("%s startModem, sg_raw output: %s", ModuleName, s)
         except Exception as ex:
-            logging.info("%s startModem sg_raw output: %s %s", ModuleName, type(ex), str(ex.args))
+            logging.info("%s startModem sg_raw output check failed: %s %s", ModuleName, type(ex), str(ex.args))
         try:
             time.sleep(8)
             ifconfig = check_output(["ifconfig"]).split()
