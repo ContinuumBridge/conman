@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # wificonfig.py
-# Copyright (C) ContinuumBridge Limited, 2013-2015 - All Rights Reserved
-# Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidential
+# Copyright (C) ContinuumBridge Limited, 2013-2015
 # Written by Peter Claydon
 #
 import sys

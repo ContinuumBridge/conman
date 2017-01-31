@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # conman.py
-# Copyright (C) ContinuumBridge Limited, 2014-2015 All Rights Reserved
+# Copyright (C) ContinuumBridge Limited, 2014-2015
 # Written by Peter Claydon
 #
 import sys
